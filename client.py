@@ -30,6 +30,13 @@ def printAuthentication(auth):
         #print (  i,  unit_title,  unit_mark)
         i +=1
 
+# Validate the TFN number entered by the user
+def validate_TFN(TFN_no):
+    if (len(TFN_no) == 8):
+        return True
+    else:
+        return False
+
 def checkDataInput(ID):
     if len(ID) != 6:
         raise Exception("The Entered value should be 6 digit")
@@ -129,8 +136,8 @@ def main():
     splashScreen()
 
     user_data = getUserInput()
-    print("USER INFORMATION: ")
-    print (user_data)
+   # print("USER INFORMATION: ")
+   # print (user_data)
 
     # personId = "1V"
     # Email = "testuser@email.com"
@@ -143,7 +150,7 @@ def main():
     #     return
 
     # printAuthentication(authentication)
-    
+    '''
     if user_data["has_tfn"]:
         print("Requesting Data from Server....")
         authentication = server1.getUserDetails(user_data["person_id"], user_data["email"])
@@ -153,9 +160,9 @@ def main():
             return
         
         printAuthentication(authentication)
-
-    result = server1.processTaxEstimate(user_data["person_ID"], user_data["net_wages"], user_data["tax_withheld"], user_data["has_phic"])
-
+    '''
+    result = server1.processTaxReturnEstimate(user_data["person_id"], user_data["net_wages"], user_data["tax_withheld"], user_data["has_phic"])
+    print(result)
     
     print("")
 
