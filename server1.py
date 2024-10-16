@@ -44,8 +44,10 @@ class server1(object):
         print(f"Processing tax return estimate for Person ID: {personId}")
         
         # Display the tax-related data (biweekly wages and tax withheld)
-        
-
+    
+        print("\nBiweekly wages and tax withheld:")
+        for i in range(1, len(net_wages) + 1):
+            print(f"Period {i}: <{net_wages[i - 1]}, {tax_withheld[i - 1]}>")
 
         # Calculate total wages and tax withheld
         net_income=sum(net_wages)

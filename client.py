@@ -82,29 +82,45 @@ def getUserInput():
             person_ID = input("Please Enter Your 6 - Digit Person ID: ").strip()
             checkIDerror = checkDataInput(person_ID)
             
-               # Initialize lists for net wages and tax withheld
+            # Initialize lists for net wages and tax withheld
             net_wages = []
             tax_withheld = []
 
-            print("Please Enter your Bi-Weekly Net Wage and the corresponding Tax Withheld.")
-            for i in range(26):
-                netWage = float(input("Please Enter Your Bi Weekly Net Wage, ENTER -1 to finish entering: "))
-                if netWage == -1:
-                    break
-                elif netWage < 0:
-                    print("Net Wage must be more than 0")
-                    continue
+            print("Please Enter your Bi-Weekly Net Wage and the corresponding Tax Withheld using the format  <net_wage, tax_withheld> .")
+            counter = 0
+            while (True):
+                payroll = input("Enter your payroll data (or '-1' to finish): ").strip()
 
-                taxWithheld = float (input ("Please Enter the corresponding Tax Withheld: "))
-                if taxWithheld < 0:
-                    print("Tax withheld cannot be less than 0")
-                    continue
-                elif taxWithheld > netWage:
-                    print ("Tax Withheld cannot be more that Net_wage")
-                    continue
+                if payroll == "-1":
+                    break
+
+                try:
+                    #Split the payroll input by " , " and change them into map datatype (Tiwari, 2024)
+                    netWage, taxWithheld = map(float, payroll.split(","))
                 
-                net_wages.append(netWage)
-                tax_withheld.append(taxWithheld)
+                    if netWage < 0:
+                        print("Net Wage must be more than 0")
+                        continue
+
+                    if taxWithheld < 0:
+                        print("Tax withheld cannot be less than 0")
+                        continue
+                    elif taxWithheld > netWage:
+                        print ("Tax Withheld cannot be more that Net_wage")
+                        continue
+                    
+                    #Only allow 26 payroll entries
+                    counter +=1
+                    if counter == 26:
+                        print("Payroll can only contain 26 data items!")
+                        break
+
+                    net_wages.append(netWage)
+                    tax_withheld.append(taxWithheld)
+                    
+                except ValueError:
+                    print("Invalid input format. Please enter the data as '<net_wage>, <tax_withheld>'")
+                    continue
 
             #Ask user whether they have Private Health Insurance Cover (PHIC)
             phic = input("Please state whether you have a Private Health Insurance Cover (PHIC) (y/n/):")
@@ -136,8 +152,8 @@ def main():
     splashScreen()
 
     user_data = getUserInput()
-   # print("USER INFORMATION: ")
-   # print (user_data)
+    print("USER INFORMATION: ")
+    print (user_data)
 
     # personId = "1V"
     # Email = "testuser@email.com"
@@ -161,6 +177,7 @@ def main():
         
         printAuthentication(authentication)
     '''
+   
     result = server1.processTaxReturnEstimate(user_data["person_id"], user_data["net_wages"], user_data["tax_withheld"], user_data["has_phic"])
     print(result)
      # Display calculation details
@@ -170,6 +187,6 @@ def main():
     print(f"Total Net Income: {result["total_net_income"]}")
     print(f"Estimated Tax Refund: {result["estimated_tax_refund"]}")
     print("")
-
+   
 
 main()
