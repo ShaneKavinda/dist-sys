@@ -11,7 +11,7 @@ SA1_PORT = 51515
 
 @Pyro4.expose
 class server1(object):
-    '''
+   
     #Perform Database Lookup
     def __getUserDetails(self, Email, personId=None):
         print("from Server1: SA1 -> SA2 : Performing Database Request")
@@ -39,7 +39,7 @@ class server1(object):
 
         print("in Server1: SA1 -> Client : Sending data back to client")
         return userDetails
-    '''
+    
     def processTaxReturnEstimate(self, personId, net_wages, tax_withheld, has_phic):
         print(f"Processing tax return estimate for Person ID: {personId}")
         

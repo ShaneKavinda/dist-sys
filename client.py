@@ -163,7 +163,12 @@ def main():
     '''
     result = server1.processTaxReturnEstimate(user_data["person_id"], user_data["net_wages"], user_data["tax_withheld"], user_data["has_phic"])
     print(result)
-    
+     # Display calculation details
+    print(f"\nPersonID: {user_data["person_id"]}")
+    print(f"Taxable Income: {result["annual_taxable_income"]}")
+    print(f"Total Tax Withheld: {result["total_tax_withheld"]}")
+    print(f"Total Net Income: {result["total_net_income"]}")
+    print(f"Estimated Tax Refund: {result["estimated_tax_refund"]}")
     print("")
 
 
