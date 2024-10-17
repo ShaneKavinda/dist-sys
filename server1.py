@@ -1,3 +1,4 @@
+#Server1.py
 #import pyodbc 
 import Pyro4
 
@@ -13,18 +14,18 @@ SA1_PORT = 51515
 class server1(object):
    
     #Perform Database Lookup
-    def __getUserDetails(self, Email, personId=None):
+    def __getUserDetails(self, tfn):
         print("from Server1: SA1 -> SA2 : Performing Database Request")
         #connect to SA2 with RMI
         sa2Uri = "PYRO:PITREDb@"+ SA2_SERVER + ":" + str(SA2_PORT)
         database=Pyro4.Proxy(sa2Uri)      
         
         #request user details
-        return database.getUserDetails(personId, Email)
+        return database.getUserDetails(tfn)
     
-    def getUserDetails(self, personId, Email):
+    def getUserDetails(self, tfn):
         print("from server1: Client -> SA1 : Called userAuthentication")
-        userDetails = self.__getUserDetails(personId, Email)
+        userDetails = self.__getUserDetails(tfn)
         
         if not userDetails or len(userDetails) == 0:
             print("No user details found.")
@@ -40,22 +41,56 @@ class server1(object):
         print("in Server1: SA1 -> Client : Sending data back to client")
         return userDetails
     
-    def processTaxReturnEstimate(self, personId, net_wages, tax_withheld, has_phic):
-        print(f"Processing tax return estimate for Person ID: {personId}")
-        
-        # Display the tax-related data (biweekly wages and tax withheld)
+    def __getUserPayrollData(self, tfn):
+        print("from Server1: SA1 -> SA2 : Performing Database Request")
+        #connect to SA2 with RMI
+        sa2Uri = "PYRO:PITREDb@"+ SA2_SERVER + ":" + str(SA2_PORT)
+        database=Pyro4.Proxy(sa2Uri) 
+
+        #reques Payroll data
+        return database.getUserPayrollData(tfn)
     
+    def getUserPayrollData(self, tfn):
+        print("from server1: Client -> SA1 : Called getPayroll")
+        payrollData = self.__getUserPayrollData(tfn)
+
+        if not payrollData or len(payrollData) == 0:
+            print ("No payroll data for this user!")
+            return []
+        
+        try:
+            for record in payrollData:
+                print(f"Payroll Data {tfn}: Net Wage: {record['net_wage']}, Tax Withheld: {record['tax_withheld']}")
+            #print(f"Has PHIC? : {payrollData['has_phic']}")
+            return payrollData
+        
+        except IndexError:
+            print("Error: Missing payroll data in response.")
+            return []
+
+    def processTaxReturnEstimate(self, tfn=None, user_data=None, has_phic=None):
+        print(f"Processing tax return estimate for User...")
+
+        if tfn:  # For users with TFN, use payroll data from the database
+            net_wages = [float(record["net_wage"]) for record in user_data]
+            tax_withheld = [float(record["tax_withheld"]) for record in user_data]
+        else:  # For users without TFN, use manually entered data
+            net_wages = user_data["net_wages"]
+            tax_withheld = user_data["tax_withheld"]
+
+        # Display the tax-related data (biweekly wages and tax withheld)
         print("\nBiweekly wages and tax withheld:")
         for i in range(1, len(net_wages) + 1):
             print(f"Period {i}: <{net_wages[i - 1]}, {tax_withheld[i - 1]}>")
-
+        
+        print("Has PHIC: ", has_phic)
         # Calculate total wages and tax withheld
         net_income=sum(net_wages)
         total_tax_withheld = sum(tax_withheld)
 
         taxable_income = net_income  #not too sure about where is taxable_income is from
 
-        # Simplified tax return logic
+        # Tax return logic
         if taxable_income <= 18200:
             tax_due = 0
         elif taxable_income >=18201 and taxable_income <= 45000:
@@ -66,7 +101,7 @@ class server1(object):
             tax_due = 29467 + 0.37 * (taxable_income - 120000)
 
         # Medicare Levy (ML) at 2% of taxable income
-        medicare_levy = taxable_income * 0.02
+        medicare_levy = round(taxable_income * 0.02, 3)
 
         if not has_phic and taxable_income > 90000:
             if taxable_income <= 105000:
@@ -79,15 +114,15 @@ class server1(object):
             mls = 0
 
         # Total tax payable
-        total_tax_payable = tax_due + medicare_levy + mls
+        total_tax_payable = round(tax_due + medicare_levy + mls, 3)
 
-        # Calculate tax refund (or additional tax owed)
-        tax_refund = total_tax_withheld - total_tax_payable
-
+        # Calculate tax refund or additional tax owed
+        tax_refund = round(total_tax_withheld - total_tax_payable, 3)
+        
         #Calculate Tax estimate
-        tax_estimate = taxable_income - net_income - tax_due - medicare_levy - mls 
+        tax_estimate = round(taxable_income - net_income - tax_due - medicare_levy - mls, 3)
 
-         # Display calculation details
+        # Display calculation details
         print(f"\nTaxable Income: {taxable_income}")
         print(f"Tax Calculated: {tax_due}")
         print(f"Medicare Levy: {medicare_levy}")
@@ -98,13 +133,11 @@ class server1(object):
         
         # Send the results back to the client
         result = {
-            "person_id": personId,
             "annual_taxable_income": taxable_income,
             "total_tax_withheld": total_tax_withheld,
             "total_net_income": net_income,
             "estimated_tax_refund": tax_refund,
             "tax_estimate" : tax_estimate,
-            "has_tfn": False
         }
 
         return result

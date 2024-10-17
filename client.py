@@ -1,4 +1,4 @@
-#Ryan doc name: ca.py
+#Client.py
 import Pyro4
 
 #Set SA1 Connection Details
@@ -19,16 +19,28 @@ def printAuthentication(auth):
     print("--------your personal details are as below---------------------------")
     print()
     #print(qual)
-    print ("  PID   | PID_NO     | Email   ")
-    print ("--------+------------+----------")
+    print ("  Person ID   | First_Name     | Email   ")
+    print ("--------------+----------------+----------")
     i=1
+    has_phic = None
     for x in auth:
         has_pid =x[0]
-        pid_no = x[1]
-        email = x[2]
-        print ( "   ", has_pid, "  |   ", pid_no, "  |  ", email)
+        first_name = x[1]
+        email = x[3]
+        phic= x[4]
+        print ( "   ", has_pid, "  |   ", first_name, "  |  ", email)
         #print (  i,  unit_title,  unit_mark)
         i +=1
+        has_phic= phic
+    return has_phic
+
+def printTaxCalculation(result):
+    print("----------TAX CALCULATIONS----------")
+    print(f"Taxable Income: {result["annual_taxable_income"]}")
+    print(f"Total Tax Withheld: {result["total_tax_withheld"]}")
+    print(f"Total Net Income: {result["total_net_income"]}")
+    print(f"Estimated Tax Refund: {result["estimated_tax_refund"]}")
+    print(f"Estimated Tax Estimate: {result["tax_estimate"]}")
 
 # Validate the TFN number entered by the user
 def validate_TFN(TFN_no):
@@ -60,27 +72,22 @@ def getUserInput():
         #Get the personId if the user has a TFN number
         if (get_TFN):
             #Get the personId as user input
-            # Validate if the length of personId = 6 and is an integer
-            person_ID = input("Please Enter Your 6 - Digit Person ID: ").strip()
-            checkIDerror = checkDataInput(person_ID)
             
-            #Get email address of the user (for authentication)
-            email = input("Enter your email address: ").strip()
-            if "@" not in email or "." not in email:
-                raise Exception("Invalid email address. Please enter a valid email.")    
-            
-            user_data ["person_ID"] = person_ID
-            user_data ["email"] = email
-            user_data ["has_TFN"] = True
+            tfn = input("Please Enter Your 8 - Digit Tax File Number: ").strip()
+            if len(tfn) != 8:
+                 raise Exception("The Entered value should be 8 digit")
 
+            user_data["tfn"] = tfn
+            user_data["has_tfn"] = True
             return user_data    
 
         #The user does not have a TFN number
         else:
             #Prompt user to enter personID
             # Prompt the user to enter net_wage, tax withheld as a key-value pair (use a loop which the user can exit anytime, with a max range of 26)
-            person_ID = input("Please Enter Your 6 - Digit Person ID: ").strip()
-            checkIDerror = checkDataInput(person_ID)
+           
+            person_ID = input("Please Enter Your 6 - Digit Person ID: ").strip() 
+            checkIDerror = checkDataInput(person_ID) # Validate if the length of personId = 6 and is an integer
             
             # Initialize lists for net wages and tax withheld
             net_wages = []
@@ -152,8 +159,8 @@ def main():
     splashScreen()
 
     user_data = getUserInput()
-    print("USER INFORMATION: ")
-    print (user_data)
+    #print("USER INFORMATION: ")
+    #print (user_data)
 
     # personId = "1V"
     # Email = "testuser@email.com"
@@ -166,27 +173,35 @@ def main():
     #     return
 
     # printAuthentication(authentication)
-    '''
+    
     if user_data["has_tfn"]:
         print("Requesting Data from Server....")
-        authentication = server1.getUserDetails(user_data["person_id"], user_data["email"])
+        authentication = server1.getUserDetails(user_data["tfn"])
 
         if not authentication:
             print("No user details found.")
             return
         
-        printAuthentication(authentication)
-    '''
-   
-    result = server1.processTaxReturnEstimate(user_data["person_id"], user_data["net_wages"], user_data["tax_withheld"], user_data["has_phic"])
-    print(result)
-     # Display calculation details
-    print(f"\nPersonID: {user_data["person_id"]}")
-    print(f"Taxable Income: {result["annual_taxable_income"]}")
-    print(f"Total Tax Withheld: {result["total_tax_withheld"]}")
-    print(f"Total Net Income: {result["total_net_income"]}")
-    print(f"Estimated Tax Refund: {result["estimated_tax_refund"]}")
-    print("")
+        has_phic= printAuthentication(authentication)
+
+        print("\nRequesting payroll data from the server...")
+        payrollData = server1.getUserPayrollData(user_data["tfn"])
+        
+        if payrollData:
+            result = server1.processTaxReturnEstimate(user_data["tfn"], payrollData, has_phic)
+            # Display calculation details
+            print(f"\nTFN: {user_data["tfn"]}")
+            printTaxCalculation(result)
+            print("")
+        else:
+            print("No payroll data found for the given TFN.")
+        
+    else:
+        result = server1.processTaxReturnEstimate(None, user_data, user_data["has_phic"])
+        # Display calculation details
+        print(f"\nPersonID: {user_data["person_id"]}")
+        printTaxCalculation(result)
+        print("")
    
 
 main()
